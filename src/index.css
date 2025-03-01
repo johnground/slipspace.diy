@@ -1,0 +1,310 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cyber-neon: 57, 255, 20;
+  --cyber-blue: 0, 102, 204;
+  --cyber-orange: 255, 127, 0;
+}
+
+@layer base {
+  body {
+    @apply antialiased bg-navy-900 text-white;
+  }
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Video Background */
+video {
+  filter: contrast(1.2) saturate(1.4) brightness(0.8) hue-rotate(45deg);
+  mix-blend-mode: hard-light;
+}
+
+/* Background Patterns */
+.bg-circuit-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(var(--cyber-neon), 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--cyber-neon), 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(var(--cyber-neon), 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--cyber-neon), 0.2) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Chat Widget Glow Effects */
+.chat-glow-text {
+  position: relative;
+  color: rgb(var(--cyber-blue));
+  text-shadow: 
+    0 0 5px rgba(var(--cyber-blue), 0.5),
+    0 0 10px rgba(var(--cyber-blue), 0.3),
+    0 0 15px rgba(var(--cyber-blue), 0.2);
+  animation: chat-text-glow 12s ease-in-out infinite;
+}
+
+.chat-glow-text span {
+  position: relative;
+  display: inline-block;
+  animation: chat-char-glow 12s ease-in-out infinite;
+  animation-delay: calc(var(--char-index, 0) * 0.1s);
+}
+
+.chat-glow-text span::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: radial-gradient(
+    circle at center,
+    rgba(var(--cyber-blue), 0.9) 0%,
+    rgba(var(--cyber-blue), 0.7) 25%,
+    rgba(var(--cyber-blue), 0.3) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  filter: blur(2px);
+  mix-blend-mode: screen;
+  animation: chat-glow-pulse 12s ease-in-out infinite;
+  animation-delay: calc(var(--char-index, 0) * 0.1s);
+}
+
+/* Chat Input Glow Effect */
+.chat-input-glow {
+  position: relative;
+  color: rgb(var(--cyber-blue));
+  caret-color: rgb(var(--cyber-blue));
+  text-shadow: 
+    0 0 5px rgba(var(--cyber-blue), 0.5),
+    0 0 10px rgba(var(--cyber-blue), 0.3);
+  animation: input-glow 12s ease-in-out infinite;
+}
+
+.chat-input-glow::placeholder {
+  color: rgba(var(--cyber-blue), 0.5);
+  text-shadow: 
+    0 0 5px rgba(var(--cyber-blue), 0.3),
+    0 0 10px rgba(var(--cyber-blue), 0.2);
+}
+
+.chat-input-glow:focus {
+  animation: input-focus-glow 1.5s ease-in-out infinite alternate;
+}
+
+/* Chat Message Glow Effect */
+.chat-message-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-message-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(var(--cyber-blue), 0.15) 0%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chat-message-glow:hover::before {
+  opacity: 1;
+}
+
+/* Markdown Styles */
+.prose {
+  max-width: none;
+}
+
+.prose pre {
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+}
+
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.prose img {
+  margin: 0;
+  border-radius: 0.5rem;
+}
+
+.prose a {
+  text-decoration: none;
+}
+
+.prose blockquote {
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Code Block Styles */
+.prose pre {
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+}
+
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Syntax Highlighting Theme Overrides */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link {
+  color: rgb(var(--cyber-blue)) !important;
+}
+
+.hljs-function,
+.hljs-title {
+  color: rgb(var(--cyber-neon)) !important;
+}
+
+.hljs-string,
+.hljs-attr {
+  color: rgb(var(--cyber-orange)) !important;
+}
+
+/* Animations */
+@keyframes chat-text-glow {
+  0%, 100% {
+    color: rgb(var(--cyber-blue));
+    text-shadow: none;
+  }
+  50% {
+    color: #fff;
+    text-shadow: 
+      0 0 5px rgba(var(--cyber-blue), 0.7),
+      0 0 10px rgba(var(--cyber -blue), 0.5),
+      0 0 15px rgba(var(--cyber-blue), 0.3);
+  }
+}
+
+@keyframes chat-char-glow {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes chat-glow-pulse {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes input-glow {
+  0%, 100% {
+    border-color: rgba(var(--cyber-blue), 0.3);
+    box-shadow: 
+      0 0 5px rgba(var(--cyber-blue), 0.2),
+      0 0 10px rgba(var(--cyber-blue), 0.1);
+  }
+  50% {
+    border-color: rgba(var(--cyber-blue), 0.5);
+    box-shadow: 
+      0 0 10px rgba(var(--cyber-blue), 0.3),
+      0 0 20px rgba(var(--cyber-blue), 0.2);
+  }
+}
+
+@keyframes input-focus-glow {
+  0% {
+    border-color: rgba(var(--cyber-blue), 0.3);
+    box-shadow: 
+      0 0 5px rgba(var(--cyber-blue), 0.3),
+      0 0 10px rgba(var(--cyber-blue), 0.2);
+  }
+  100% {
+    border-color: rgba(var(--cyber-blue), 0.6);
+    box-shadow: 
+      0 0 10px rgba(var(--cyber-blue), 0.4),
+      0 0 20px rgba(var(--cyber-blue), 0.3);
+  }
+}
+
+/* Animated Text */
+.animated-text {
+  display: inline-block;
+}
+
+.animated-text span {
+  display: inline-block;
+  opacity: 0.9;
+  color: rgb(var(--cyber-blue));
+  position: relative;
+  animation: text-glow 12s ease-in-out infinite;
+  animation-delay: calc(var(--char-index, 0) * 0.1s);
+}
+
+.animated-text span::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: radial-gradient(
+    circle at center,
+    rgba(var(--cyber-blue), 0.9) 0%,
+    rgba(var(--cyber-blue), 0.7) 25%,
+    rgba(var(--cyber-blue), 0.3) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  filter: blur(2px);
+  mix-blend-mode: screen;
+  animation: glow-pulse 12s ease-in-out infinite;
+  animation-delay: calc(var(--char-index, 0) * 0.1s);
+}
+
+@keyframes text-glow {
+  0%, 100% {
+    color: rgb(var(--cyber-blue));
+    text-shadow: none;
+  }
+  50% {
+    color: #fff;
+    text-shadow: 
+      0 0 5px rgba(var(--cyber-blue), 0.7),
+      0 0 10px rgba(var(--cyber-blue), 0.5),
+      0 0 15px rgba(var(--cyber-blue), 0.3);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
