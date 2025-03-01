@@ -5,19 +5,26 @@ import { ProfileSettings } from './ProfileSettings';
 import { UserProfile } from './UserProfile';
 import { ModalPortal } from './ModalPortal';
 
-export function UserMenu() {
+interface UserMenuProps {
+  userId?: string;
+  isAdmin?: boolean;
+  onOpenProfile?: () => void;
+  onOpenAdmin?: () => void;
+}
+
+export function UserMenu({ userId, isAdmin, onOpenProfile, onOpenAdmin }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(isAdmin || false);
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
       
-      if (data.user) {
+      if (data.user && !isAdmin) {
         checkAdminStatus(data.user.id);
       }
     };
@@ -28,10 +35,10 @@ export function UserMenu() {
       async (event, session) => {
         setUser(session?.user ?? null);
         
-        if (session?.user) {
+        if (session?.user && !isAdmin) {
           checkAdminStatus(session.user.id);
-        } else {
-          setIsAdmin(false);
+        } else if (!session?.user) {
+          setIsUserAdmin(false);
         }
       }
     );
@@ -39,7 +46,13 @@ export function UserMenu() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [isAdmin]);
+  
+  useEffect(() => {
+    if (isAdmin !== undefined) {
+      setIsUserAdmin(isAdmin);
+    }
+  }, [isAdmin]);
   
   async function checkAdminStatus(userId: string) {
     try {
@@ -50,15 +63,15 @@ export function UserMenu() {
       
       if (error) {
         console.error('Error checking admin status:', error);
-        setIsAdmin(false);
+        setIsUserAdmin(false);
         return;
       }
       
       // Check if any of the user's roles is 'admin'
-      setIsAdmin(data?.some(role => role.role === 'admin') || false);
+      setIsUserAdmin(data?.some(role => role.role === 'admin') || false);
     } catch (err) {
       console.error('Error checking admin status:', err);
-      setIsAdmin(false);
+      setIsUserAdmin(false);
     }
   }
 
@@ -68,12 +81,20 @@ export function UserMenu() {
   };
 
   const openSettings = () => {
-    setIsSettingsOpen(true);
+    if (onOpenProfile) {
+      onOpenProfile();
+    } else {
+      setIsSettingsOpen(true);
+    }
     setIsOpen(false);
   };
 
   const openUserProfile = () => {
-    setIsProfileOpen(true);
+    if (onOpenAdmin) {
+      onOpenAdmin();
+    } else {
+      setIsProfileOpen(true);
+    }
     setIsOpen(false);
   };
 
@@ -98,7 +119,7 @@ export function UserMenu() {
           <div className="absolute right-0 mt-2 w-56 rounded-lg bg-navy-800/90 backdrop-blur-lg border border-cyber-blue/20 shadow-xl z-50">
             <div className="p-3 border-b border-cyber-blue/10">
               <p className="text-sm font-medium text-white">{user.email}</p>
-              {isAdmin && (
+              {isUserAdmin && (
                 <div className="flex items-center mt-1">
                   <Shield className="w-3 h-3 text-cyber-neon mr-1" />
                   <span className="text-xs text-cyber-neon">Admin</span>
@@ -114,7 +135,7 @@ export function UserMenu() {
                 <span>Settings</span>
               </button>
               
-              {isAdmin && (
+              {isUserAdmin && (
                 <button
                   onClick={openUserProfile}
                   className="flex items-center space-x-2 w-full p-2 text-left rounded-lg hover:bg-navy-700/50 transition-colors text-gray-300 hover:text-white"

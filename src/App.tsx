@@ -11,6 +11,7 @@ import { Solutions } from './components/Solutions';
 import { UserMenu } from './components/UserMenu';
 import { ProfileSettings } from './components/ProfileSettings';
 import { UserProfile } from './components/UserProfile';
+import { ValueProposition } from './components/ValueProposition';
 import type { SavedAssistant } from './templates/types';
 import { supabase } from './lib/supabase';
 import { SlipSpaceLogo } from './components/SlipSpaceLogo';
@@ -231,12 +232,7 @@ function App() {
                 ))}
 
                 {userId ? (
-                  <UserMenu 
-                    userId={userId}
-                    isAdmin={isAdmin}
-                    onOpenProfile={() => setIsProfileModalOpen(true)}
-                    onOpenAdmin={() => setIsAdminModalOpen(true)}
-                  />
+                  <UserMenu />
                 ) : (
                   <button
                     onClick={() => setIsAuthModalOpen(true)}
@@ -387,6 +383,9 @@ function App() {
             )}
           </div>
         </section>
+
+        {/* Value Proposition Section */}
+        <ValueProposition />
 
         {/* Solutions Section */}
         <section id="solutions" className="relative">
