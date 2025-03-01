@@ -7,7 +7,10 @@ import { AdminProfileList } from './components/AdminProfileList';
 import { UserAssistant } from './components/UserAssistant';
 import { AdminAssistant } from './components/AdminAssistant';
 import { AssistantSelection } from './components/AssistantSelection';
-import { Solutions } from './components/Solutions'; // Import Solutions component
+import { Solutions } from './components/Solutions';
+import { UserMenu } from './components/UserMenu';
+import { ProfileSettings } from './components/ProfileSettings';
+import { UserProfile } from './components/UserProfile';
 import type { SavedAssistant } from './templates/types';
 import { supabase } from './lib/supabase';
 import { SlipSpaceLogo } from './components/SlipSpaceLogo';
@@ -35,6 +38,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(() => {
     const hash = window.location.hash.slice(1);
     return hash || 'home';
@@ -226,30 +230,23 @@ function App() {
                   </button>
                 ))}
 
-                {userId && (
-                  <>
-                    {isAdmin && (
-                      <button
-                        onClick={() => setIsAdminModalOpen(true)}
-                        className="group relative px-4 py-2 rounded-lg flex items-center space-x-2 bg-cyber-neon/10 hover:bg-cyber-neon/20 border border-cyber-neon/30 text-cyber-neon hover:text-white transition-all duration-300"
-                        aria-label="Admin Panel"
-                      >
-                        <div className="absolute -inset-0.5 bg-cyber-neon rounded-lg blur opacity-0 group-hover:opacity-20 transition duration-300" />
-                        <Shield className="relative h-4 w-4" />
-                        <span className="relative font-medium">Admin</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={handleLogout}
-                      className="group relative px-4 py-2 rounded-lg flex items-center space-x-2 bg-cyber-blue/10 hover:bg-cyber-blue/20 border border-cyber-blue/30 text-cyber-blue hover:text-white transition-all duration-300"
-                      aria-label="Logout"
-                    >
-                      <div className="absolute -inset-0.5 bg-cyber-blue rounded-lg blur opacity-0 group-hover:opacity-20 transition duration-300" />
-                      <LogOut className="relative h-4 w-4" />
-                      <span className="relative font-medium">Logout</span>
-                    </button>
-                  </>
+                {userId ? (
+                  <UserMenu 
+                    userId={userId}
+                    isAdmin={isAdmin}
+                    onOpenProfile={() => setIsProfileModalOpen(true)}
+                    onOpenAdmin={() => setIsAdminModalOpen(true)}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="group relative px-4 py-2 rounded-lg flex items-center space-x-2 bg-cyber-blue/10 hover:bg-cyber-blue/20 border border-cyber-blue/30 text-cyber-blue hover:text-white transition-all duration-300"
+                    aria-label="Login"
+                  >
+                    <div className="absolute -inset-0.5 bg-cyber-blue rounded-lg blur opacity-0 group-hover:opacity-20 transition duration-300" />
+                    <LogIn className="relative h-4 w-4" />
+                    <span className="relative font-medium">Login</span>
+                  </button>
                 )}
               </div>
 
@@ -296,29 +293,54 @@ function App() {
                   </button>
                 ))}
 
-                {/* Mobile Admin Button */}
-                {userId && isAdmin && (
+                {userId ? (
+                  <>
+                    {/* Mobile Profile Button */}
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsProfileModalOpen(true);
+                      }}
+                      className="w-full flex items-center space-x-3 px-4 py-3 mx-2 rounded-lg bg-navy-700/50 hover:bg-navy-700/80 text-white transition-all duration-200"
+                    >
+                      <UserCircle className="h-5 w-5 text-cyber-blue" />
+                      <span className="font-medium">Profile Settings</span>
+                    </button>
+                    
+                    {/* Mobile Admin Button */}
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsAdminModalOpen(true);
+                        }}
+                        className="w-full flex items-center space-x-3 px-4 py-3 mx-2 rounded-lg bg-cyber-neon/10 hover:bg-cyber-neon/20 border border-cyber-neon/30 text-cyber-neon hover:text-white transition-all duration-200"
+                      >
+                        <Shield className="h-5 w-5" />
+                        <span className="font-medium">Admin Panel</span>
+                      </button>
+                    )}
+
+                    {/* Mobile Logout Button */}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-3 px-4 py-3 mx-2 rounded-lg bg-cyber-blue/10 hover:bg-cyber-blue/20 border border-cyber-blue/30 text-cyber-blue hover:text-white transition-all duration-200"
+                      aria-label="Logout"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span className="font-medium">Logout</span>
+                    </button>
+                  </>
+                ) : (
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
-                      setIsAdminModalOpen(true);
+                      setIsAuthModalOpen(true);
                     }}
-                    className="w-full flex items-center space-x-3 px-4 py-3 mx-2 rounded-lg bg-cyber-neon/10 hover:bg-cyber-neon/20 border border-cyber-neon/30 text-cyber-neon hover:text-white transition-all duration-200"
-                  >
-                    <Shield className="h-5 w-5" />
-                    <span className="font-medium">Admin Panel</span>
-                  </button>
-                )}
-
-                {/* Mobile Logout Button */}
-                {userId && (
-                  <button
-                    onClick={handleLogout}
                     className="w-full flex items-center space-x-3 px-4 py-3 mx-2 rounded-lg bg-cyber-blue/10 hover:bg-cyber-blue/20 border border-cyber-blue/30 text-cyber-blue hover:text-white transition-all duration-200"
-                    aria-label="Logout"
                   >
-                    <LogOut className="h-5 w-5" />
-                    <span className="font-medium">Logout</span>
+                    <LogIn className="h-5 w-5" />
+                    <span className="font-medium">Login</span>
                   </button>
                 )}
               </div>
@@ -410,36 +432,17 @@ function App() {
           onClose={() => setIsAuthModalOpen(false)} 
         />
 
+        {/* Profile Settings Modal */}
+        {isProfileModalOpen && userId && (
+          <ProfileSettings 
+            userId={userId}
+            onClose={() => setIsProfileModalOpen(false)}
+          />
+        )}
+
         {/* Admin Modal */}
         {isAdminModalOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="min-h-screen px-4 text-center">
-              <div className="fixed inset-0 bg-navy-900/80 backdrop-blur-sm" onClick={() => setIsAdminModalOpen(false)} />
-              
-              <div className="inline-block w-full max-w-4xl my-8 text-left align-middle transition-all transform">
-                <div className="relative bg-navy-900/90 backdrop-blur-lg rounded-2xl border border-cyber-blue/20 shadow-xl">
-                  <div className="p-6 border-b border-cyber-blue/10">
-                    <div className="flex items-center justify-between">
-                      <h1 className="text-2xl font-bold text-cyber-blue">Admin Panel</h1>
-                      <button
-                        onClick={() => setIsAdminModalOpen(false)}
-                        className="p-2 hover:bg-navy-800/50 rounded-lg transition-colors text-gray-400 hover:text-white"
-                      >
-                        <X className="h-6 w-6" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
-                    <AdminProfileList />
-                    {/* Admin Assistant */}
-                    <div className="p-4 border-t border-cyber-blue/10">
-                      <AdminAssistant userId={userId} className="w-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <UserProfile onClose={() => setIsAdminModalOpen(false)} />
         )}
       </div>
     </div>

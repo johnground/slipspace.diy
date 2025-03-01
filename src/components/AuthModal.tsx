@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { X, LogIn, Mail, Lock, UserPlus, KeyRound, ArrowLeft } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { X, LogIn, Mail, Lock, UserPlus, KeyRound, ArrowLeft, AlertCircle, Wifi, WifiOff, Key } from 'lucide-react';
+import { supabase, testSupabaseConnection, checkApiKey } from '../lib/supabase';
 import { z } from 'zod';
 
 interface AuthModalProps {
@@ -28,6 +28,42 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<boolean | null>(null);
+  const [connectionTesting, setConnectionTesting] = useState(false);
+  const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Test connection when modal opens
+      checkConnection();
+    }
+  }, [isOpen]);
+
+  async function checkConnection() {
+    setConnectionTesting(true);
+    setError(null);
+    
+    try {
+      // First check if the API key is valid
+      console.log("Checking API key...");
+      const isApiKeyValid = await checkApiKey();
+      setApiKeyValid(isApiKeyValid);
+      
+      if (isApiKeyValid) {
+        console.log("API key is valid, testing full connection...");
+        const isConnected = await testSupabaseConnection();
+        setConnectionStatus(isConnected);
+      } else {
+        console.log("API key is invalid or connection issues");
+        setConnectionStatus(false);
+      }
+    } catch (err) {
+      console.error("Connection check error:", err);
+      setConnectionStatus(false);
+    } finally {
+      setConnectionTesting(false);
+    }
+  }
 
   if (!isOpen) return null;
 
@@ -99,6 +135,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null);
     setSuccess(null);
     
+    // Check connection before proceeding
+    if (connectionStatus === false) {
+      setError("Cannot connect to Supabase. Please check your API key and internet connection.");
+      return;
+    }
+    
     if (!validateInput()) return;
     
     setLoading(true);
@@ -115,18 +157,27 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           break;
         }
         case 'register': {
+          console.log('Starting registration process...');
+          
           const { data, error } = await supabase.auth.signUp({
             email,
-            password
+            password,
+            options: {
+              emailRedirectTo: window.location.origin
+            }
           });
+          
+          console.log('Registration response:', { data, error });
+          
           if (error) throw error;
           
           // Create initial profile if registration was successful
           if (data.user) {
+            console.log('Creating initial profile for user:', data.user.id);
             await createInitialProfile(data.user.id);
           }
           
-          setSuccess('Registration successful! You can now log in.');
+          setSuccess('Registration successful! Please check your email to confirm your account.');
           setMode('login');
           resetForm();
           break;
@@ -141,6 +192,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
       }
     } catch (err) {
+      console.error('Auth error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -179,6 +231,33 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <X className="h-6 w-6" />
             </button>
           </div>
+
+          {connectionTesting ? (
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center">
+              <div className="animate-spin mr-2 h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+              <span>Testing connection to Supabase...</span>
+            </div>
+          ) : connectionStatus === false ? (
+            <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center">
+              <WifiOff className="h-5 w-5 mr-2 flex-shrink-0" />
+              <span>
+                {apiKeyValid === false 
+                  ? "Invalid API key or connection issues with Supabase." 
+                  : "Cannot connect to Supabase. This may be due to network restrictions in the WebContainer environment."}
+              </span>
+              <button 
+                onClick={checkConnection}
+                className="ml-2 text-xs bg-amber-500/20 hover:bg-amber-500/30 px-2 py-1 rounded"
+              >
+                Retry
+              </button>
+            </div>
+          ) : connectionStatus === true && (
+            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 flex items-center">
+              <Wifi className="h-5 w-5 mr-2 flex-shrink-0" />
+              <span>Connected to Supabase successfully!</span>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
@@ -250,8 +329,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center space-x-2 py-2 px-4 bg-cyber-neon/10 hover:bg-cyber-neon/20 border border-cyber-neon/30 rounded-lg text-cyber-neon hover:text-white transition-all duration-200"
+              disabled={loading || connectionStatus === false}
+              className={`w-full flex items-center justify-center space-x-2 py-2 px-4 ${
+                connectionStatus === false 
+                  ? 'bg-gray-500/10 border-gray-500/30 text-gray-400 cursor-not-allowed' 
+                  : 'bg-cyber-neon/10 hover:bg-cyber-neon/20 border border-cyber-neon/30 text-cyber-neon hover:text-white'
+              } rounded-lg transition-all duration-200`}
             >
               {mode === 'login' ? (
                 <LogIn className="h-5 w-5" />
