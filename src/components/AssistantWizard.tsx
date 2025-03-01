@@ -7,7 +7,7 @@ import {
   PersonalityStep,
   InstructionsStep,
   PreviewStep
-} from './wizard/WizardSteps';
+} from './Wizard/WizardSteps';
 
 interface AssistantWizardProps {
   userId: string;
