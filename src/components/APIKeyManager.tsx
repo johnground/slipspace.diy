@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Eye, EyeOff, Save, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { validateAPIKey } from '../lib/openai';
-
-interface APIKey {
-  service: string;
-  api_key: string;
-  updated_at: string;
-}
+import { validateAPIKey, getUserAPIKey, saveUserAPIKey } from '../lib/openai';
 
 export function APIKeyManager() {
   const [isLoading, setIsLoading] = useState(true);
@@ -35,25 +29,17 @@ export function APIKeyManager() {
         return;
       }
 
-      const { data: key, error } = await supabase.rpc('get_api_key', {
-        service_name: 'openai'
-      });
-
-      if (error) {
-        if (error.message.includes('Admin privileges required')) {
-          setError('You need administrator privileges to manage API keys');
-          return;
-        }
-        throw error;
-      }
-
+      // Get the user's API key
+      const key = await getUserAPIKey();
       if (key) {
         setApiKey(key);
+        
         // Get last updated time
         const { data: keyInfo } = await supabase
           .from('api_keys')
           .select('updated_at')
-          .eq('service', 'openai')
+          .eq('user_id', user.id)
+          .eq('provider', 'openai')
           .single();
 
         if (keyInfo) {
@@ -74,17 +60,9 @@ export function APIKeyManager() {
       setError(null);
       setSuccess(null);
 
-      const { error } = await supabase.rpc('set_api_key', {
-        service_name: 'openai',
-        key_value: apiKey
-      });
-
-      if (error) {
-        if (error.message.includes('Admin privileges required')) {
-          setError('You need administrator privileges to manage API keys');
-          return;
-        }
-        throw error;
+      const saved = await saveUserAPIKey(apiKey);
+      if (!saved) {
+        throw new Error('Failed to save API key');
       }
 
       setSuccess('API key saved successfully');
@@ -103,7 +81,7 @@ export function APIKeyManager() {
       setError(null);
       setSuccess(null);
 
-      const isValid = await validateAPIKey();
+      const isValid = await validateAPIKey(apiKey);
 
       if (isValid) {
         setSuccess('API key is valid');
