@@ -31,6 +31,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [connectionStatus, setConnectionStatus] = useState<boolean | null>(null);
   const [connectionTesting, setConnectionTesting] = useState(false);
   const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,6 +39,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       checkConnection();
     }
   }, [isOpen]);
+
+  // Countdown timer for rate limit
+  useEffect(() => {
+    if (rateLimitCountdown && rateLimitCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRateLimitCountdown(prev => prev ? prev - 1 : null);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (rateLimitCountdown === 0) {
+      setRateLimitCountdown(null);
+    }
+  }, [rateLimitCountdown]);
 
   async function checkConnection() {
     setConnectionTesting(true);
@@ -159,27 +172,44 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         case 'register': {
           console.log('Starting registration process...');
           
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              emailRedirectTo: window.location.origin
+          try {
+            const { data, error } = await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                emailRedirectTo: window.location.origin
+              }
+            });
+            
+            console.log('Registration response:', { data, error });
+            
+            if (error) {
+              // Check for rate limit error
+              if (error.message && error.message.includes('security purposes') && error.message.includes('seconds')) {
+                const waitTime = parseInt(error.message.match(/\d+/)?.[0] || '30');
+                setRateLimitCountdown(waitTime);
+                throw new Error(`Rate limited. Please try again in ${waitTime} seconds.`);
+              }
+              throw error;
             }
-          });
-          
-          console.log('Registration response:', { data, error });
-          
-          if (error) throw error;
-          
-          // Create initial profile if registration was successful
-          if (data.user) {
-            console.log('Creating initial profile for user:', data.user.id);
-            await createInitialProfile(data.user.id);
+            
+            // Create initial profile if registration was successful
+            if (data.user) {
+              console.log('Creating initial profile for user:', data.user.id);
+              try {
+                await createInitialProfile(data.user.id);
+              } catch (profileError) {
+                console.error('Profile creation failed, but user was registered:', profileError);
+                // Continue with success message even if profile creation fails
+              }
+            }
+            
+            setSuccess('Registration successful! Please check your email to confirm your account.');
+            setMode('login');
+            resetForm();
+          } catch (err) {
+            throw err;
           }
-          
-          setSuccess('Registration successful! Please check your email to confirm your account.');
-          setMode('login');
-          resetForm();
           break;
         }
         case 'reset': {
@@ -260,14 +290,23 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           )}
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-              {error}
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500">
-              {success}
+            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
+
+          {rateLimitCountdown !== null && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+              <span>Rate limited. Please wait {rateLimitCountdown} seconds before trying again.</span>
             </div>
           )}
 
@@ -329,9 +368,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             <button
               type="submit"
-              disabled={loading || connectionStatus === false}
+              disabled={loading || connectionStatus === false || rateLimitCountdown !== null}
               className={`w-full flex items-center justify-center space-x-2 py-2 px-4 ${
-                connectionStatus === false 
+                connectionStatus === false || rateLimitCountdown !== null
                   ? 'bg-gray-500/10 border-gray-500/30 text-gray-400 cursor-not-allowed' 
                   : 'bg-cyber-neon/10 hover:bg-cyber-neon/20 border border-cyber-neon/30 text-cyber-neon hover:text-white'
               } rounded-lg transition-all duration-200`}
