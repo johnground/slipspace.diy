@@ -2,149 +2,104 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { APIKeyManager } from './APIKeyManager';
 
-interface Profile {
-  id: string;
-  full_name: string | null;
-  language: string;
-  timezone: string;
-  email_notifications: boolean;
-  push_notifications: boolean;
-  newsletter_subscription: boolean;
-  marketing_emails: boolean;
-  profile_visibility: string;
-  data_sharing: boolean;
-  font_size: string;
-  color_scheme: string;
+interface ProfileSettingsProps {
+  userId?: string;
+  onClose?: () => void;
 }
 
-export function ProfileSettings() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+export function ProfileSettings({ userId, onClose }: ProfileSettingsProps) {
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('general');
 
   useEffect(() => {
-    loadProfile();
-  }, []);
-
-  async function loadProfile() {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Authentication required');
-        return;
+    async function getUser() {
+      try {
+        setLoading(true);
+        
+        // If userId is provided, use it, otherwise get the current user
+        let userData;
+        if (userId) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+          if (error) throw error;
+          userData = data;
+        } else {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('No user logged in');
+          
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (error && error.code !== 'PGRST116') throw error;
+          userData = data || { id: user.id, email: user.email };
+        }
+        
+        setUser(userData);
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
       }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (err) {
-      console.error('Error loading profile:', err);
-      setError('Failed to load profile');
-    } finally {
-      setLoading(false);
     }
-  }
+    
+    getUser();
+  }, [userId]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyber-blue"></div>
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyber-blue mx-auto"></div>
+        <p className="mt-4 text-gray-400">Loading profile settings...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (!user) {
     return (
-      <div className="p-6">
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-          <p>{error}</p>
-        </div>
+      <div className="p-8 text-center">
+        <p className="text-red-400">Failed to load profile</p>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="mt-4 px-4 py-2 bg-cyber-blue/10 hover:bg-cyber-blue/20 border border-cyber-blue/30 rounded-lg text-cyber-blue hover:text-white transition-all duration-200"
+          >
+            Close
+          </button>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="bg-navy-900/90 backdrop-blur-lg rounded-2xl border border-cyber-blue/20 shadow-xl">
-      {/* Tabs */}
-      <div className="flex border-b border-cyber-blue/10">
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`px-4 py-3 font-medium transition-colors ${
-            activeTab === 'general'
-              ? 'text-cyber-blue border-b-2 border-cyber-blue'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          General
-        </button>
-        <button
-          onClick={() => setActiveTab('api-keys')}
-          className={`px-4 py-3 font-medium transition-colors ${
-            activeTab === 'api-keys'
-              ? 'text-cyber-blue border-b-2 border-cyber-blue'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          API Keys
-        </button>
-        <button
-          onClick={() => setActiveTab('notifications')}
-          className={`px-4 py-3 font-medium transition-colors ${
-            activeTab === 'notifications'
-              ? 'text-cyber-blue border-b-2 border-cyber-blue'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Notifications
-        </button>
-        <button
-          onClick={() => setActiveTab('privacy')}
-          className={`px-4 py-3 font-medium transition-colors ${
-            activeTab === 'privacy'
-              ? 'text-cyber-blue border-b-2 border-cyber-blue'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Privacy
-        </button>
-      </div>
-
-      {/* Tab content */}
-      <div className="p-6">
-        {activeTab === 'general' && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-white">General Settings</h2>
-            {/* General settings content here */}
-            <p className="text-gray-400">General settings coming soon...</p>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold text-cyber-blue mb-6">Profile Settings</h2>
+      
+      <div className="space-y-8">
+        {/* User Info Section */}
+        <div className="bg-navy-800/50 rounded-lg p-6 border border-cyber-blue/10">
+          <h3 className="text-xl font-semibold text-white mb-4">User Information</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+              <div className="bg-navy-900/80 border border-cyber-blue/20 rounded-lg px-4 py-2 text-white">
+                {user.email}
+              </div>
+            </div>
           </div>
-        )}
-
-        {activeTab === 'api-keys' && <APIKeyManager />}
-
-        {activeTab === 'notifications' && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-white">Notification Settings</h2>
-            {/* Notification settings content here */}
-            <p className="text-gray-400">Notification settings coming soon...</p>
-          </div>
-        )}
-
-        {activeTab === 'privacy' && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-white">Privacy Settings</h2>
-            {/* Privacy settings content here */}
-            <p className="text-gray-400">Privacy settings coming soon...</p>
-          </div>
-        )}
+        </div>
+        
+        {/* API Keys Section */}
+        <div className="bg-navy-800/50 rounded-lg p-6 border border-cyber-blue/10">
+          <h3 className="text-xl font-semibold text-white mb-4">API Keys</h3>
+          <APIKeyManager userId={user.id} />
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { User, LogOut, Settings, Shield, UserCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ProfileSettings } from './ProfileSettings';
 import { UserProfile } from './UserProfile';
+import { ModalPortal } from './ModalPortal';
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -136,23 +137,17 @@ export function UserMenu() {
       </div>
 
       {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="min-h-screen px-4 text-center">
-            <div className="fixed inset-0 bg-navy-900/80 backdrop-blur-sm" onClick={() => setIsSettingsOpen(false)} />
-            
-            <div className="inline-block w-full max-w-4xl my-8 text-left align-middle transition-all transform">
-              <div className="relative">
-                <button
-                  onClick={() => setIsSettingsOpen(false)}
-                  className="absolute top-4 right-4 p-2 hover:bg-navy-800/50 rounded-lg transition-colors text-gray-400 hover:text-white z-10"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-                <ProfileSettings />
-              </div>
-            </div>
+        <ModalPortal onClose={() => setIsSettingsOpen(false)}>
+          <div className="relative">
+            <button
+              onClick={() => setIsSettingsOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-navy-800/50 rounded-lg transition-colors text-gray-400 hover:text-white"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <ProfileSettings />
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {isProfileOpen && <UserProfile onClose={() => setIsProfileOpen(false)} />}

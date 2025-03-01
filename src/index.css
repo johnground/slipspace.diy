@@ -18,6 +18,45 @@
   color-scheme: dark;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 15, 26, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
+}
+
+.modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background-color: rgba(15, 15, 26, 0.95);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 64rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
 /* Video Background */
 video {
   filter: contrast(1.2) saturate(1.4) brightness(0.8) hue-rotate(45deg);

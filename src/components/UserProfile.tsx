@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { AdminProfileList } from './AdminProfileList';
+import { ModalPortal } from './ModalPortal';
 
 interface UserProfileProps {
   onClose: () => void;
@@ -46,16 +47,18 @@ export function UserProfile({ onClose }: UserProfileProps) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/80 backdrop-blur-sm">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyber-blue"></div>
-      </div>
+      <ModalPortal>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyber-blue"></div>
+        </div>
+      </ModalPortal>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/80 backdrop-blur-sm">
-        <div className="bg-navy-900/90 backdrop-blur-lg rounded-2xl border border-cyber-blue/20 shadow-xl p-8 max-w-md mx-auto text-center">
+      <ModalPortal onClose={onClose}>
+        <div className="p-8 max-w-md mx-auto text-center">
           <Shield className="h-12 w-12 text-cyber-blue mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
           <p className="text-gray-400 mb-6">You don't have permission to access this area.</p>
@@ -66,37 +69,31 @@ export function UserProfile({ onClose }: UserProfileProps) {
             Close
           </button>
         </div>
-      </div>
+      </ModalPortal>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="min-h-screen px-4 text-center">
-        <div className="fixed inset-0 bg-navy-900/80 backdrop-blur-sm" onClick={onClose} />
-        
-        <div className="inline-block w-full max-w-4xl my-8 text-left align-middle transition-all transform">
-          <div className="relative bg-navy-900/90 backdrop-blur-lg rounded-2xl border border-cyber-blue/20 shadow-xl">
-            {/* Header */}
-            <div className="p-6 border-b border-cyber-blue/10">
-              <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-cyber-blue">User Management</h1>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-navy-800/50 rounded-lg transition-colors text-gray-400 hover:text-white"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
-              <AdminProfileList />
-            </div>
+    <ModalPortal onClose={onClose}>
+      <div>
+        {/* Header */}
+        <div className="p-6 border-b border-cyber-blue/10">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-cyber-blue">User Management</h1>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-navy-800/50 rounded-lg transition-colors text-gray-400 hover:text-white"
+            >
+              <X className="h-6 w-6" />
+            </button>
           </div>
         </div>
+
+        {/* Content */}
+        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
+          <AdminProfileList />
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
